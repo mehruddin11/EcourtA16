@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
+import { AuthService } from 'src/services/auth.service';
 
 @Component({
   selector: 'app-reset-password',
@@ -10,15 +11,21 @@ export class ResetPasswordComponent implements OnInit {
 
   resetPasswordForm: any;
   submitted = false;
-
-  constructor(private fb: FormBuilder) { }
+ userId:any
+  constructor(private fb: FormBuilder, private authService: AuthService,) { }
 
   ngOnInit() {
     this.initForm();
+    let id  = localStorage.getItem("id");
+    if (id){
+      let parsedId= JSON.parse(id)
+      this.userId=parsedId
+    }
   }
 
   private initForm() {
     this.resetPasswordForm = this.fb.group({
+      userId:[""],
       password: ['', Validators.required],
       confirmPassword: ['', Validators.required],
     });
@@ -26,10 +33,18 @@ export class ResetPasswordComponent implements OnInit {
 
   onSubmit() {
     this.submitted = true;
-
-    if (this.resetPasswordForm.valid && this.passwordsMatch()) {
-      // Your password reset logic goes here
-      console.log('Form submitted successfully!');
+    if (this.passwordsMatch()) {
+      const userId = this.userId;
+      const newPassword = this.resetPasswordForm.get('password').value;
+      this.authService.resetPassword(userId, newPassword).subscribe(
+        (response) => {
+          console.log('Password reset successful:', response);
+        },
+        (error) => {
+          console.error('Error resetting password:', error);
+          
+        }
+      );
     }
   }
 

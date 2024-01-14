@@ -68,19 +68,31 @@ export class RegisterScreenComponent implements OnInit {
       city: [null, Validators.required],
       address: ["", Validators.required],
       email: ["", [Validators.required, Validators.email]],
-      mobileNumber: [
-        "",
-        [Validators.required, Validators.pattern(/^[0-9]{10}$/)],
-      ],
+      mobileNumber: ["+91", [
+        Validators.required,
+        Validators.pattern(/^\+91[0-9]{10}$/),
+    ]],
+    
       category: [null, Validators.required],
       profession: ["", Validators.required],
+      username: " ",
+      password:" ",
+      roles:"USER"
     });
 
+   
+
     this.registerFormStep2 = this.formBuilder.group({
+      mobileNumber: ["+91", [
+        Validators.required,
+        Validators.pattern(/^\+91[0-9]{10}$/),
+    ]],
+
       otp: ["", Validators.required],
     });
 
     this.registerFormStep3 = this.formBuilder.group({
+      userID:[""],
       username: ["", Validators.required],
       password: ["", Validators.required],
     });
@@ -90,86 +102,131 @@ export class RegisterScreenComponent implements OnInit {
       { label: "Advocate", value: "ADVOCATE" },
       { label: "User", value: "USER" },
       { label: "Office Professional", value: "OFFICE" },
-      // Add more options as needed
+     
     ];
   }
+  otpsend= false;
+  otpVerified= false
+  userId=null;
 
   onStepChange(step: any) {
     this.currentStep = step;
   }
-
   onSubmitStep1() {
     this.submitted = true;
     try {
-      if (this.registerFormStep1.valid) {
-        this.authService
-          .registration(this.registerFormStep1.value)
-          .subscribe((e: any) => {
-            if (e.statusCode === 200) {
-              this.currentStep = 1;
-              this.submitted = false;
-              this.toast.success("Please verify number");
-            }
-          });
-        this.currentStep = 1;
-        this.submitted = false;
-      }
-    } catch (error: any) {
-      console.log(error);
-      this.toast.error(error.message);
-    }
-  }
+        if (this.registerFormStep1.valid) {
+            this.authService.registration(this.registerFormStep1.value).subscribe(
+                (response: any) => {
+                    console.log(response);
+                    if (response.status === 201) {
+                        this.userId = response.user.id;
+                        this.currentStep = 1;
+                        this.submitted = false;
+                        this.toast.success("Please verify number");
+                    }
+                },
+                (error: any) => {
+                  
+                 
+                    let step = error?.nextStep;
+                    let msg = error.error
+                    let userId = error.userId;
 
-  onSubmitStep2() {
-    this.submitted = true;
-    try {
-      if (this.registerFormStep2.valid) {
-        this.authService
-          .verifyRegistration(this.registerFormStep2.value)
-          .subscribe((e: any) => {
-            if (e.statusCode === 200) {
-              this.currentStep = 2;
-              this.submitted = false;
-              this.toast.success("Create Credentials");
-            }
-          });
-        this.currentStep = 2;
-        this.submitted = false;
+                    this.currentStep = step - 1;
+                    this.toast.success(`${msg}  ${this.currentStep}`);
+                    this.userId=userId;
+                    console.log("user id ", userId)
+                            
+                        
+                    
+                }
+            );
+        }
+    } catch (error) {
+        console.log(error);
+        alert();
+    }
+}
+
+  generateOtp(){
+    this.authService.generateOtp(this.registerFormStep2.value).subscribe((res:any)=>{
+      if (res.otp){
+        this.otpsend=true
       }
-    } catch (error: any) {
-      console.log(error);
-      this.toast.error(error.message);
+    })
+  }
+  verifyOtp(){
+    this.submitted = true;
+    if (this.registerFormStep2) {
+      this.authService.verifyRegistration(this.registerFormStep2.value).subscribe(
+        (response: any) => {
+          console.log(response);
+          if (response.status === 200) {
+           this.otpVerified=true
+            this.submitted = false;
+            this.toast.success("Create Credentials");
+          } else {
+            this.toast.error("Failed to verify OTP. Please try again.");
+          }
+        },
+        (error) => {
+          console.error(error);
+          if (error.status === 400) {
+            this.toast.error("Invalid OTP. Please enter a valid OTP.");
+          } else if (error.status === 500) {
+            this.toast.error("Failed to verify OTP. Server error. Please try again later.");
+          } else {
+            this.toast.error("An unexpected error occurred. Please try again.");
+          }
+        }
+      );
+      this.submitted = false;
     }
   }
+  onSubmitStep2() {
+    if (this.otpVerified){
+      this.currentStep = 2;
+    }
+  }
+  
 
   onSubmitStep3() {
-    this.submitted = true;
     try {
-      if (this.registerFormStep3.valid) {
-        this.authService
-          .createCredentials(this.registerFormStep3.value)
-          .subscribe((e: any) => {
-            if (e.statusCode === 200) {
-              this.currentStep = 2;
-              this.submitted = false;
-              this.toast.success("Registered Successfully");
-            }
-          });
-        this.token.setToken("eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJPbmxpbmUgSldUIEJ1aWxkZXIiLCJpYXQiOjE3MDQ2MzU4MjEsImV4cCI6MTczNjE3MTgyMSwiYXVkIjoid3d3LmV4YW1wbGUuY29tIiwic3ViIjoianJvY2tldEBleGFtcGxlLmNvbSIsIk5hbWUiOiJNb2hkIFJpeWFuIiwiUm9sZSI6ImN1c3RvbWVyIiwiSWQiOiI1ZjRlZTQzNy01OWM3LTQzMjUtOTQ4My1iZDAzZDQ5ODhhZWUifQ.WY_xjpysGwOuEoJrHpKkBc94XSdLQxf4RD7mSwhS0Lo")
-        this.currentStep = 2;
-        this.submitted = false;
-        window.location.reload()
-        this.router.navigate(['/case-page'], { replaceUrl: true });
-      }
+        if (this.registerFormStep3.valid) {
+            // Patch the userId to the form
+            this.registerFormStep3.patchValue({
+                userID: this.userId,
+            });
+            this.authService.createCredentials(this.registerFormStep3.value).subscribe(
+                (response: any) => {
+                    console.log(response);
+                    if (response.status === 200) {
+                        this.currentStep = 2;
+                        this.submitted = false;
+                        this.toast.success(response.message);
+                        this.router.navigate(["/login"]);
+                    }
+                },
+                (error: any) => {
+                    console.error(error);
+                    this.handleRegistrationError(error);
+                }
+            );
+        }
     } catch (error: any) {
-      console.log(error);
-      this.toast.error(error.message);
+        console.log(error);
+        this.toast.error(error.message);
     }
-    if (this.registerFormStep3.valid) {
-      this.submitted = false;
+}
+private handleRegistrationError(error: any) {
+    if (error.status === "BAD_GATEWAY" && error.exceptionType === "DuplicateEmailException") {
+        this.toast.error("User already exists with this username");
+       
+    } else {
+        this.toast.error("An error occurred. Please try again later.");
+       
+    }
+}
 
-      console.log("Form submitted successfully!");
-      // Perform registration or other actions for step 3
-    }
-  }
 }

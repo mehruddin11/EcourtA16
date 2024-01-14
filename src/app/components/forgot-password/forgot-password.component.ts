@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { AuthService } from '../../../services/auth.service';
@@ -16,6 +16,7 @@ export class ForgotPasswordComponent implements OnInit {
     private route: ActivatedRoute,
     private commonService: CommonService,
     private authService: AuthService,
+   
     private fb: FormBuilder) { }
 
   ngOnInit() {
@@ -23,20 +24,60 @@ export class ForgotPasswordComponent implements OnInit {
   }
   resetPasswordSendForm: any
   submitted = false;
+  sendOtp= false;
+  isVerified= false
+ 
+  userID:any;
   private initForm() {
     this.resetPasswordSendForm = this.fb.group({
-      mobileNumber: ['', Validators.required],
+      mobileNumber: ["+91", [
+        Validators.required,
+        Validators.pattern(/^\+91[0-9]{10}$/),
+    ]],
+    otp:["",Validators.required]
+
     });
   }
 
-  onSubmit() {
+  sendVerificationOtp() {
     this.submitted = true;
-
-    // Your form submission logic goes here
-    // For example, you can check if the form is valid before proceeding
-    if (this.resetPasswordSendForm.valid) {
-      // Perform login or other actions
-      console.log('Form submitted successfully!');
+      this.authService.forgotPassword(this.resetPasswordSendForm.value).subscribe(
+        (res) => {
+          if (res.status ===200){
+            this.sendOtp=true
+            console.log(res)
+            console.log(res.userId)
+          
+          }
+        },
+        (error) => {
+          console.error(error);
+          
+        }
+      );
+    
+  }
+  verifyOtp(){
+    if(this.resetPasswordSendForm.valid){
+      this.authService.verifyForgotPasswordOtp(this.resetPasswordSendForm.value).subscribe((res)=>{
+        if (res.status===200){
+          this.isVerified=true
+          console.log(res)
+          this.userID=res.userID
+          localStorage.setItem("id", JSON.stringify(res.userId))
+          console.log('otpVeriied');
+        }
+        if (res.status==400){
+          console.log('inavlid otp');
+        }
+      })
     }
   }
+  navigateToReset(){
+    if (this.isVerified){
+
+      this.router.navigate(["/reset-password"])
+    }
+  }
+  
 }

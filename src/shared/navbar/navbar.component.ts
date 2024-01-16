@@ -1,4 +1,6 @@
-import { Component } from '@angular/core';
+// navbar.component.ts
+
+import { Component, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { JwtService } from '../../services/jwt.service';
 import { Subscription } from 'rxjs';
@@ -8,23 +10,26 @@ import { Subscription } from 'rxjs';
   templateUrl: './navbar.component.html',
   styleUrls: ['./navbar.component.scss'],
 })
-export class NavbarComponent {
+export class NavbarComponent implements OnDestroy {
   items: any;
   userDetail: any;
-  private authenticationSubscription: any;
+  private authenticationSubscription: Subscription;
+
   constructor(private router: Router, private token: JwtService) {
     this.userDetail = this.token.decodeJwtToken();
     this.updateNavbarItems();
 
     this.authenticationSubscription = this.token.getAuthenticationStatus().subscribe((authenticated) => {
       this.userDetail = this.token.decodeJwtToken();
+      console.log(this.userDetail)
       this.updateNavbarItems();
     });
   }
 
   private updateNavbarItems(): void {
     const isAuthenticated = this.token.isAuthenticated();
-    const userRole = this.userDetail ? this.userDetail.Role : null;
+    const userRoles = this.userDetail ? this.userDetail.roles : [];
+
 
     if (!isAuthenticated) {
       this.items = [
@@ -32,37 +37,31 @@ export class NavbarComponent {
         { label: 'Login', icon: 'pi pi-fw pi-sign-in', routerLink: 'login' },
         { label: 'Register', icon: 'pi pi-fw pi-user-plus', routerLink: 'register' },
       ];
-    } else if (userRole === 'admin') {
-      this.items = [
-        { label: 'Ecourt App', icon: 'pi pi-fw pi-home' },
-
-        { label: 'Case History', icon: 'pi pi-fw pi-list', routerLink: 'case-history' },
-        {
-          label: 'Meassage Status',
-          icon: 'pi pi-fw pi-list',
-          routerLink: 'message-status',
-        },
-        { label: 'Transactions', icon: 'pi pi-fw pi-list', routerLink: 'transactions' },
-
-
-        { label: 'Complaints', icon: 'pi pi-fw pi-list', routerLink: 'complaints-list' },
-        { label: 'Feedbacks', icon: 'pi pi-fw pi-list', routerLink: 'feedback-list' },
-
-        { label: 'Logout', icon: 'pi pi-fw pi-sign-out', command: () => this.logOut() },
-      ];
-    } else if (userRole === 'customer') {
-      this.items = [
-        { label: 'Ecourt App', icon: 'pi pi-fw pi-home' },
-        { label: 'Profile Modify', icon: 'pi pi-fw pi-pencil', routerLink: 'profile-modify' },
-        { label: 'Case Page', icon: 'pi pi-fw pi-list', routerLink: 'case-page' },
-        { label: 'Mobile Maintenance', icon: 'pi pi-fw pi-cog', routerLink: 'mobile-management' },
-        { label: 'Package Selection', icon: 'pi pi-fw pi-shopping-cart', routerLink: 'package-selection' },
-        { label: 'Transactions', icon: 'pi pi-fw pi-list', routerLink: 'transactions' },
-        { label: 'Case History', icon: 'pi pi-fw pi-chart-bar', routerLink: 'case-history' },
-        { label: 'Complaints', icon: 'pi pi-fw pi-list', routerLink: 'customer-complaints' },
-
-        { label: 'Logout', icon: 'pi pi-fw pi-sign-out', command: () => this.logOut() },
-      ];
+    } else {
+      // Handle multiple roles if needed
+      if (userRoles[0].authority.includes('ADMIN')) {
+        this.items = [
+          { label: 'Ecourt App', icon: 'pi pi-fw pi-home' },
+          { label: 'Case History', icon: 'pi pi-fw pi-list', routerLink: 'case-history' },
+          { label: 'Message Status', icon: 'pi pi-fw pi-list', routerLink: 'message-status' },
+          { label: 'Transactions', icon: 'pi pi-fw pi-list', routerLink: 'transactions' },
+          { label: 'Complaints', icon: 'pi pi-fw pi-list', routerLink: 'complaints-list' },
+          { label: 'Feedbacks', icon: 'pi pi-fw pi-list', routerLink: 'feedback-list' },
+          { label: 'Logout', icon: 'pi pi-fw pi-sign-out', command: () => this.logOut() },
+        ];
+      } else if (userRoles[0].authority.includes('USER')) {
+        this.items = [
+          { label: 'Ecourt App', icon: 'pi pi-fw pi-home' },
+          { label: 'Profile Modify', icon: 'pi pi-fw pi-pencil', routerLink: 'profile-modify' },
+          { label: 'Case Page', icon: 'pi pi-fw pi-list', routerLink: 'case-page' },
+          { label: 'Mobile Maintenance', icon: 'pi pi-fw pi-cog', routerLink: 'mobile-management' },
+          { label: 'Package Selection', icon: 'pi pi-fw pi-shopping-cart', routerLink: 'package-selection' },
+          { label: 'Transactions', icon: 'pi pi-fw pi-list', routerLink: 'transactions' },
+          { label: 'Case History', icon: 'pi pi-fw pi-chart-bar', routerLink: 'case-history' },
+          { label: 'Complaints', icon: 'pi pi-fw pi-list', routerLink: 'customer-complaints' },
+          { label: 'Logout', icon: 'pi pi-fw pi-sign-out', command: () => this.logOut() },
+        ];
+      }
     }
   }
 
@@ -78,6 +77,7 @@ export class NavbarComponent {
       state: {}
     });
   }
+
   ngOnDestroy(): void {
     // Unsubscribe to avoid memory leaks
     if (this.authenticationSubscription) {
@@ -85,43 +85,3 @@ export class NavbarComponent {
     }
   }
 }
-
-// items = [
-//   { label: 'Home', icon: 'pi pi-fw pi-home', routerLink: '/' },
-//   { label: 'Login', icon: 'pi pi-fw pi-sign-in', routerLink: 'login' },
-//   { label: 'Logout', icon: 'pi pi-fw pi-log-out', command: () => this.logOut() },
-//   {
-//     label: 'Register',
-//     icon: 'pi pi-fw pi-user-plus',
-//     routerLink: 'register',
-//   },
-//   {
-//     label: 'Case History',
-//     icon: 'pi pi-fw pi-list',
-//     routerLink: 'case-history',
-//   },
-//   { label: 'Case Page', icon: 'pi pi-fw pi-list', routerLink: 'case-page' },
-//   {
-//     label: 'Case Status',
-//     icon: 'pi pi-fw pi-list',
-//     routerLink: 'case-status',
-//   },
-//   {
-//     label: 'Case Maintenance',
-//     icon: 'pi pi-fw pi-cog',
-//     routerLink: 'case-maintenance',
-//   },
-//   {
-//     label: 'Mobile Maintenance',
-//     icon: 'pi pi-fw pi-cog',
-//     routerLink: 'mobile-management',
-//   },
-//   { label: 'Feedback', icon: 'pi pi-fw pi-comment', routerLink: 'feedback' },
-//   { label: 'Master', icon: 'pi pi-fw pi-briefcase', routerLink: 'master' },
-//   { label: 'Payment', icon: 'pi pi-fw pi-dollar', routerLink: 'payment' },
-//   {
-//     label: 'Profile Modify',
-//     icon: 'pi pi-fw pi-pencil',
-//     routerLink: 'profile-modify',
-//   },
-// ];

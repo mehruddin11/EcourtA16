@@ -5,7 +5,7 @@ import { Observable } from 'rxjs';
 @Injectable()
 export class InterceptorService implements HttpInterceptor {
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    const jwt = localStorage.getItem('authToken'); // Use getItem instead of get
+    const jwt = localStorage.getItem('token'); // Use getItem instead of get
     if (jwt) {
       const headers = {
         Authorization: `Bearer ${jwt}`,

@@ -42,10 +42,17 @@ export class AdminLoginComponent implements OnInit {
   onSubmit() {
     this.submitted = true;
     if (this.loginForm.valid) {
-      this.token.setToken("eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJPbmxpbmUgSldUIEJ1aWxkZXIiLCJpYXQiOjE3MDQ2MzU4MjEsImV4cCI6MTczNjE3MTgyMSwiYXVkIjoid3d3LmV4YW1wbGUuY29tIiwic3ViIjoianJvY2tldEBleGFtcGxlLmNvbSIsIk5hbWUiOiJNb2hkIFJpeWFuIiwiUm9sZSI6ImFkbWluIiwiSWQiOiI1ZjRlZTQzNy01OWM3LTQzMjUtOTQ4My1iZDAzZDQ5ODhhZWUifQ.zOJvQveknwVqGJFIKj3yd68cBGfS-YcOZmWZd1YG2Gg")
-      this.router.navigate(['/case-history'], { replaceUrl: true });
-      console.log('Form submitted successfully!');
-      window.location.reload()
+      this.authService.adminLogin(this.loginForm.value).subscribe((res)=>{
+        if (res.token){
+
+          console.log("respinbse",res)
+          this.token.setToken(res.token)
+          this.router.navigate(['/case-history'], { replaceUrl: true });
+          console.log('Form submitted successfully!');
+        }
+        
+      })
+      // window.location.reload()
 
     }
   }

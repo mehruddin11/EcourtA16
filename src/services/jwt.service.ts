@@ -2,14 +2,13 @@ import { Injectable } from '@angular/core';
 import { jwtDecode } from 'jwt-decode';
 import { Subject } from 'rxjs';
 
-
 @Injectable({
   providedIn: 'root'
 })
 export class JwtService {
 
-  constructor() { }
   private authenticationSubject = new Subject<boolean>();
+
   decodeJwtToken() {
     const token = this.getToken();
     if (token) {
@@ -17,8 +16,7 @@ export class JwtService {
         // Decode the JWT token
         const decodedToken: any = jwtDecode(token);
         return decodedToken;
-      }
-      catch (error) {
+      } catch (error) {
         return null;
       }
     }
@@ -26,32 +24,37 @@ export class JwtService {
   }
 
   getToken() {
-    return localStorage.getItem("authtoken");
+    return localStorage.getItem("token");
   }
 
   setToken(token: string) {
     this.authenticationSubject.next(true);
-    return localStorage.setItem("authtoken", token);
-  }
-  removeToken() {
-    this.authenticationSubject.next(false);
-    return localStorage.removeItem("authtoken");
-  }
-  getAuthenticationStatus(): Subject<boolean> {
-    return this.authenticationSubject;
-  }
-  getUserRole() {
-    const decodedToken = this.decodeJwtToken();
-    return decodedToken ? decodedToken["Role"] : null;
+    return localStorage.setItem("token", token);
   }
 
+  removeToken() {
+    this.authenticationSubject.next(false);
+    return localStorage.removeItem("token");
+  }
+
+  getAuthenticationStatus() {
+    return this.authenticationSubject;
+  }
+
+  getUserRole() {
+    const decodedToken = this.decodeJwtToken();
+    return decodedToken && decodedToken.roles
+      ? decodedToken.roles.map((role: { authority: any; }) => role.authority)
+      : [];
+  }
+  
   isTokenExpired() {
     const decodedToken = this.decodeJwtToken();
     if (decodedToken && decodedToken.exp) {
       const currentTime = Math.floor(Date.now() / 1000);
       return decodedToken.exp < currentTime;
     }
-    return true; // Token is considered expired if no expiry information is available
+    return true; 
   }
 
   getPermissions() {
@@ -60,12 +63,10 @@ export class JwtService {
   }
 
   getRedirectRoute() {
-
     const permissions = this.getPermissions();
-
     const permissionToRouteMap: any = {
-      'customer': 'customer',
-      'admin': 'admin',
+      'USER': 'user-portal',
+      'ADMIN': 'admin-portal',
     };
 
     console.log(permissions);
@@ -78,29 +79,27 @@ export class JwtService {
         return routePath;
       }
     }
-    return 'admin-portal'
+    return 'admin-portal';
   }
 
   isAuthenticated() {
     const token = this.getToken();
-
-    if (!!token && !this.isTokenExpired()) {
+  
+    console.log(token);
+    if (token && !this.isTokenExpired()) {
       return true;
-    }
-    else {
-      // this.logout()
+    } else {
       return false;
     }
-
   }
+  
 
   getName() {
     const decodedToken = this.decodeJwtToken();
-    if (decodedToken && decodedToken.Name) {
-      return decodedToken.Name
-    }
-    else {
-      return "Admin"
+    if (decodedToken && decodedToken.sub) {
+      return decodedToken.sub;
+    } else {
+      return "Admin";
     }
   }
 

@@ -65,6 +65,11 @@ export class AuthService {
     return this.http.post(`${this.baseUrl}/reset-password`, null, { params: params });
   }
 
+  adminLogin(data:string):Observable<any>{
+   
+     return this.http.post(`${this.baseUrl}/authenticate`, data)
+   }
+
   private error(error: HttpErrorResponse) {
     let errorMessage = "";
     if (error.error instanceof ErrorEvent) {

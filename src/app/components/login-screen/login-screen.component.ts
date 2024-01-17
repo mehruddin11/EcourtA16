@@ -50,6 +50,7 @@ export class LoginScreenComponent implements OnInit {
           localStorage.setItem('token', token);
           
           this.toast.success("Login successful!");
+          this.router.navigate(["/case-page"])
 
         },
         (error) => {
